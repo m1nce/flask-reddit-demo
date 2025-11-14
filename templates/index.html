@@ -50,6 +50,9 @@
         align-items: center;
         gap: 6px;
       }
+      form {
+        margin: 0;
+      }
       button {
         appearance: none;
         border: 1px solid rgba(127, 127, 127, 0.4);
@@ -76,6 +79,36 @@
       a {
         color: inherit;
       }
+      .new-post,
+      .hidden-posts {
+        margin-bottom: 24px;
+      }
+      .new-post form {
+        display: grid;
+        gap: 12px;
+      }
+      .new-post label {
+        display: flex;
+        flex-direction: column;
+        font-size: 14px;
+        gap: 4px;
+      }
+      input[type="text"] {
+        border: 1px solid rgba(127, 127, 127, 0.4);
+        border-radius: 6px;
+        padding: 8px;
+        font-size: 14px;
+      }
+      .flash {
+        border: 1px solid rgba(255, 99, 71, 0.6);
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        background: rgba(255, 99, 71, 0.15);
+      }
+      .flash p {
+        margin: 0;
+      }
     </style>
   </head>
 
@@ -87,31 +120,106 @@
     </header>
 
     <main class="container">
-      <ul>
-        {% for link in links %}
-        <li>
-          <div class="votes">
-            <button class="up">▲</button>
-            <div class="score" data-score>{{ link.score }}</div>
-            <button class="down">▼</button>
-          </div>
-          <div class="content">
-            <p class="title">
-              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
-                >{{ link.title }}</a
-              >
-            </p>
-            <a
-              class="url"
-              href="{{ link.url }}"
-              target="_blank"
-              rel="noopener noreferrer"
-              >{{ link.url }}</a
-            >
-          </div>
-        </li>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash">
+        {% for message in messages %}
+        <p>{{ message }}</p>
         {% endfor %}
-      </ul>
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <section class="new-post">
+        <h2>Submit a new post</h2>
+        <form method="post" action="{{ url_for('create_post') }}">
+          <label>
+            Title
+            <input type="text" name="title" required />
+          </label>
+          <label>
+            URL
+            <input type="text" name="url" placeholder="https://example.com" required />
+          </label>
+          <button type="submit">Submit</button>
+        </form>
+      </section>
+
+      <section class="feed">
+        <h2>Top posts</h2>
+        <ul>
+          {% for link in visible_links %}
+          <li>
+            <div class="votes">
+              <form method="post" action="{{ url_for('vote', link_id=link.id, action='upvote') }}">
+                <button class="up" type="submit">▲</button>
+              </form>
+              <div class="score" data-score>{{ link.score }}</div>
+              <form method="post" action="{{ url_for('vote', link_id=link.id, action='downvote') }}">
+                <button class="down" type="submit">▼</button>
+              </form>
+            </div>
+            <div class="content">
+              <p class="title">
+                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                  >{{ link.title }}</a
+                >
+              </p>
+              <a
+                class="url"
+                href="{{ link.url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ link.url }}</a
+              >
+              <form method="post" action="{{ url_for('toggle_hide', link_id=link.id) }}">
+                <button type="submit">Hide</button>
+              </form>
+            </div>
+          </li>
+          {% else %}
+          <li>No posts yet.</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      {% if hidden_links %}
+      <section class="hidden-posts">
+        <h2>Hidden posts</h2>
+        <ul>
+          {% for link in hidden_links %}
+          <li>
+            <div class="votes">
+              <form method="post" action="{{ url_for('vote', link_id=link.id, action='upvote') }}">
+                <button class="up" type="submit">▲</button>
+              </form>
+              <div class="score">{{ link.score }}</div>
+              <form method="post" action="{{ url_for('vote', link_id=link.id, action='downvote') }}">
+                <button class="down" type="submit">▼</button>
+              </form>
+            </div>
+            <div class="content">
+              <p class="title">
+                <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer"
+                  >{{ link.title }}</a
+                >
+              </p>
+              <a
+                class="url"
+                href="{{ link.url }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ link.url }}</a
+              >
+              <form method="post" action="{{ url_for('toggle_hide', link_id=link.id) }}">
+                <button type="submit">Unhide</button>
+              </form>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
     </main>
   </body>
 </html>
